@@ -43,7 +43,7 @@ TSharedRef< FSlateStyleSet > FMiePlotImporterStyle::Create()
 	TSharedRef< FSlateStyleSet > Style = MakeShareable(new FSlateStyleSet("MiePlotImporterStyle"));
 	Style->SetContentRoot(IPluginManager::Get().FindPlugin("MiePlotImporter")->GetBaseDir() / TEXT("Resources"));
 
-	Style->Set("MiePlotImporter.PluginAction", new IMAGE_BRUSH_SVG(TEXT("PlaceholderButtonIcon"), Icon20x20));
+	Style->Set("MiePlotImporter.ImportPhaseFunctionLUT", new IMAGE_BRUSH_SVG(TEXT("PlaceholderButtonIcon"), Icon20x20));
 	return Style;
 }
 

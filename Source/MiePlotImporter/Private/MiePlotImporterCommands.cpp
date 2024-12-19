@@ -6,7 +6,7 @@
 
 void FMiePlotImporterCommands::RegisterCommands()
 {
-	UI_COMMAND(PluginAction, "MiePlotImporter", "Execute MiePlotImporter action", EUserInterfaceActionType::Button, FInputChord());
+	UI_COMMAND(ImportPhaseFunctionLUT, "MiePlotImporter", "Import MiePlot Phase Function as a LUT", EUserInterfaceActionType::Button, FInputChord());
 }
 
 #undef LOCTEXT_NAMESPACE

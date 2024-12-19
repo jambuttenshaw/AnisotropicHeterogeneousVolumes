@@ -22,7 +22,7 @@ void FMiePlotImporterModule::StartupModule()
 	PluginCommands = MakeShareable(new FUICommandList);
 
 	PluginCommands->MapAction(
-		FMiePlotImporterCommands::Get().PluginAction,
+		FMiePlotImporterCommands::Get().ImportPhaseFunctionLUT,
 		FExecuteAction::CreateRaw(this, &FMiePlotImporterModule::PluginButtonClicked),
 		FCanExecuteAction());
 
@@ -45,13 +45,7 @@ void FMiePlotImporterModule::ShutdownModule()
 
 void FMiePlotImporterModule::PluginButtonClicked()
 {
-	// Put your "OnButtonClicked" stuff here
-	FText DialogText = FText::Format(
-							LOCTEXT("PluginButtonDialogText", "Add code to {0} in {1} to override this button's actions"),
-							FText::FromString(TEXT("FMiePlotImporterModule::PluginButtonClicked()")),
-							FText::FromString(TEXT("MiePlotImporter.cpp"))
-					   );
-	FMessageDialog::Open(EAppMsgType::Ok, DialogText);
+	
 }
 
 void FMiePlotImporterModule::RegisterMenus()
@@ -63,7 +57,7 @@ void FMiePlotImporterModule::RegisterMenus()
 		UToolMenu* Menu = UToolMenus::Get()->ExtendMenu("LevelEditor.MainMenu.Window");
 		{
 			FToolMenuSection& Section = Menu->FindOrAddSection("WindowLayout");
-			Section.AddMenuEntryWithCommandList(FMiePlotImporterCommands::Get().PluginAction, PluginCommands);
+			Section.AddMenuEntryWithCommandList(FMiePlotImporterCommands::Get().ImportPhaseFunctionLUT, PluginCommands);
 		}
 	}
 
@@ -72,7 +66,7 @@ void FMiePlotImporterModule::RegisterMenus()
 		{
 			FToolMenuSection& Section = ToolbarMenu->FindOrAddSection("PluginTools");
 			{
-				FToolMenuEntry& Entry = Section.AddEntry(FToolMenuEntry::InitToolBarButton(FMiePlotImporterCommands::Get().PluginAction));
+				FToolMenuEntry& Entry = Section.AddEntry(FToolMenuEntry::InitToolBarButton(FMiePlotImporterCommands::Get().ImportPhaseFunctionLUT));
 				Entry.SetCommandList(PluginCommands);
 			}
 		}
