@@ -3,6 +3,7 @@
 #include "MiePlotImporter.h"
 #include "MiePlotImporterStyle.h"
 #include "MiePlotImporterCommands.h"
+
 #include "Misc/MessageDialog.h"
 #include "ToolMenus.h"
 
@@ -45,7 +46,7 @@ void FMiePlotImporterModule::ShutdownModule()
 
 void FMiePlotImporterModule::PluginButtonClicked()
 {
-	
+	Import();
 }
 
 void FMiePlotImporterModule::RegisterMenus()
@@ -72,6 +73,40 @@ void FMiePlotImporterModule::RegisterMenus()
 		}
 	}
 }
+
+
+void FMiePlotImporterModule::Import()
+{
+	// Get files to parse
+	TArray<FString> Paths;
+	if (!OpenFileDialogue(Paths, TEXT("Open MiePlot Data"), TEXT(""), TEXT(""), TEXT(".txt"), true))
+	{
+		// File import failed	
+		return;
+	}
+
+	for (auto& Path : Paths)
+	{
+		// The array of samples to put into the LUT
+		TArray<FVector> PhaseFunctionSamples;
+
+		if (!ParseMiePlotData(Path, PhaseFunctionSamples))
+		{
+			// Error
+			// Log error and continue to next file
+			continue;
+		}
+
+		// Get destination file name
+
+		// Create texture
+
+		// Populate texture with sample data
+
+	}
+
+}
+
 
 #undef LOCTEXT_NAMESPACE
 	

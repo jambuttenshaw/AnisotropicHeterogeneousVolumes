@@ -22,6 +22,23 @@ private:
 
 	void RegisterMenus();
 
+	// Main import functionality
+	void Import();
+
+	// Helper functions
+
+	static bool OpenFileDialogue(TArray<FString>& FilePaths,
+		const FString& DialogTitle,
+		const FString& DefaultPath,
+		const FString& DefaultFile,
+		const FString& FileType,
+		bool IsMultiple);
+
+	static void* GetWindowHandle();
+
+
+	static bool ParseMiePlotData(const FString& Path, TArray<FVector>& OutPhaseFunctionSamples);
+
 
 private:
 	TSharedPtr<class FUICommandList> PluginCommands;
