@@ -7,6 +7,9 @@
 class FToolBarBuilder;
 class FMenuBuilder;
 
+DECLARE_LOG_CATEGORY_EXTERN(LogMiePlotImporter, Log, All);
+
+
 class FMiePlotImporterModule : public IModuleInterface
 {
 public:
@@ -22,11 +25,11 @@ private:
 
 	void RegisterMenus();
 
+private:
 	// Main import functionality
-	void Import();
+	static void Import();
 
 	// Helper functions
-
 	static bool OpenFileDialogue(TArray<FString>& FilePaths,
 		const FString& DialogTitle,
 		const FString& DefaultPath,
@@ -36,9 +39,7 @@ private:
 
 	static void* GetWindowHandle();
 
-
-	static bool ParseMiePlotData(const FString& Path, TArray<FVector>& OutPhaseFunctionSamples);
-
+	static bool ParseMiePlotData(const FString& Path, TArray<FVector4f>& OutPhaseFunctionSamples);
 
 private:
 	TSharedPtr<class FUICommandList> PluginCommands;

@@ -2,9 +2,10 @@
 
 #include "MiePlotImporter.h"
 #include "Misc/DefaultValueHelper.h"
+#include "Sampling/VectorSetAnalysis.h"
 
 
-bool FMiePlotImporterModule::ParseMiePlotData(const FString& Path, TArray<FVector>& OutPhaseFunctionSamples)
+bool FMiePlotImporterModule::ParseMiePlotData(const FString& Path, TArray<FVector4f>& OutPhaseFunctionSamples)
 {
 	// Load and parse data
 	TArray<FString> LoadedFile;
@@ -88,7 +89,7 @@ bool FMiePlotImporterModule::ParseMiePlotData(const FString& Path, TArray<FVecto
 		switch (LineCounter % 3)
 		{
 		case 0:
-			OutPhaseFunctionSamples.Emplace(UnPolarizedPhase, 0.0f, 0.0f);
+			OutPhaseFunctionSamples.Emplace(UnPolarizedPhase, 0.0f, 0.0f, 0.0f);
 			break;
 		case 1:
 			OutPhaseFunctionSamples.Last().Y = UnPolarizedPhase;
@@ -112,9 +113,9 @@ bool FMiePlotImporterModule::ParseMiePlotData(const FString& Path, TArray<FVecto
 
 	// Normalize phase function by numerically integrating over the surface of the sphere
 
-	auto SamplePhaseLUT = [&](const FVector& Direction)-> FVector
+	auto SamplePhaseLUT = [&](const FVector3f& Direction)-> FVector4f
 		{
-			const float cosTheta = FMath::Clamp(FVector::DotProduct(Direction, FVector(0.0f, 0.0f, 1.0f)), -1.0f, 1.0f);
+			const float cosTheta = FMath::Clamp(FVector3f::DotProduct(Direction, FVector3f(0.0f, 0.0f, 1.0f)), -1.0f, 1.0f);
 			const float theta = FMath::Acos(cosTheta);
 
 			float uv = theta / PI;
@@ -131,7 +132,7 @@ bool FMiePlotImporterModule::ParseMiePlotData(const FString& Path, TArray<FVecto
 
 	// Perform Monte Carlo integration
 	constexpr uint32 NumSamples = 1'000'000;
-	FVector Accumulator{ 0.0f, 0.0f, 0.0f };
+	FVector4f Accumulator{ 0.0f, 0.0f, 0.0f };
 
 	for (uint32 Sample = 0; Sample < NumSamples; Sample++)
 	{
@@ -144,7 +145,7 @@ bool FMiePlotImporterModule::ParseMiePlotData(const FString& Path, TArray<FVecto
 		float SinPhi = FMath::Sin(Phi);
 		float CosPhi = FMath::Cos(Phi);
 
-		FVector PhaseSample = SamplePhaseLUT(FVector{ SinTheta * CosPhi, CosTheta, SinTheta * SinPhi });
+		FVector4f PhaseSample = SamplePhaseLUT({ SinTheta * CosPhi, CosTheta, SinTheta * SinPhi });
 		Accumulator += PhaseSample / UniformSpherePDF;
 	}
 	Accumulator /= static_cast<float>(NumSamples);
