@@ -5,6 +5,7 @@
 #include "MiePlotImporterStyle.h"
 #include "MiePlotImporterCommands.h"
 
+#include "MiePlotImportOptions.h"
 
 #include "Misc/MessageDialog.h"
 #include "ToolMenus.h"
@@ -14,12 +15,66 @@
 #include "UObject/SavePackage.h"
 #include "TextureCompiler.h"
 
+#include "MiePlotImportWindow.h"
+#include "HAL/PlatformApplicationMisc.h"
+#include "Interfaces/IMainFrameModule.h"
+
 
 static const FName MiePlotImporterTabName("MiePlotImporter");
 
 DEFINE_LOG_CATEGORY(LogMiePlotImporter);
 
 #define LOCTEXT_NAMESPACE "FMiePlotImporterModule"
+
+
+static bool ShowMiePlotImportWindow(const FString& Filename, bool& bApplyForAllAssets, FMiePlotImportOptions* ImportOptions)
+{
+	TSharedPtr<SWindow> ParentWindow;
+
+	if (FModuleManager::Get().IsModuleLoaded("MainFrame"))
+	{
+		IMainFrameModule& MainFrame = FModuleManager::LoadModuleChecked<IMainFrameModule>("MainFrame");
+		ParentWindow = MainFrame.GetParentWindow();
+	}
+
+	// Compute centered window position based on max window size, which include when all categories are expanded
+	constexpr float ImportWindowWidth = 450.0f;
+	constexpr float ImportWindowHeight = 750.0f;
+	FVector2D ImportWindowSize = FVector2D(ImportWindowWidth, ImportWindowHeight); // Max window size it can get based on current slate
+
+
+	FSlateRect WorkAreaRect = FSlateApplicationBase::Get().GetPreferredWorkArea();
+	FVector2D DisplayTopLeft(WorkAreaRect.Left, WorkAreaRect.Top);
+	FVector2D DisplaySize(WorkAreaRect.Right - WorkAreaRect.Left, WorkAreaRect.Bottom - WorkAreaRect.Top);
+
+	float ScaleFactor = FPlatformApplicationMisc::GetDPIScaleFactorAtPoint(DisplayTopLeft.X, DisplayTopLeft.Y);
+	ImportWindowSize *= ScaleFactor;
+
+	FVector2D WindowPosition = (DisplayTopLeft + (DisplaySize - ImportWindowSize) / 2.0f) / ScaleFactor;
+
+	TSharedRef<SWindow> Window = SNew(SWindow)
+		.Title(LOCTEXT("MiePlotImportOptionsTitle", "MiePlot Import Options"))
+		.SizingRule(ESizingRule::Autosized)
+		.AutoCenter(EAutoCenter::None)
+		.ClientSize(ImportWindowSize)
+		.ScreenPosition(WindowPosition);
+
+	TSharedPtr<SMiePlotImportWindow> MiePlotImportWindow;
+	Window->SetContent(
+		SAssignNew(MiePlotImportWindow, SMiePlotImportWindow)
+		.ImportOptions(ImportOptions)
+		.WidgetWindow(Window)
+		.FullPath(FText::FromString(Filename))
+		.MaxWindowHeight(ImportWindowWidth)
+		.MaxWindowWidth(ImportWindowHeight)
+	);
+
+	FSlateApplication::Get().AddModalWindow(Window, ParentWindow, false);
+
+	bApplyForAllAssets = MiePlotImportWindow->ShouldApplyImportOptionsToAllAssets();
+
+	return MiePlotImportWindow->ShouldImport();
+}
 
 void FMiePlotImporterModule::StartupModule()
 {
@@ -96,14 +151,25 @@ void FMiePlotImporterModule::Import()
 		return;
 	}
 
+	bool bApplyImportOptionsToAll = false;
+	FMiePlotImportOptions ImportOptions;
+
 	for (auto& Path : Paths)
 	{
+		if (!bApplyImportOptionsToAll)
+		{
+			if (!ShowMiePlotImportWindow(Path, bApplyImportOptionsToAll , &ImportOptions))
+			{
+				continue;
+			}
+		}
+
 		FString FileName = FPaths::GetBaseFilename(Path);
 
 		// The array of samples to put into the LUT
 		TArray<FVector4f> PhaseFunctionSamples;
 
-		if (!ParseMiePlotData(Path, PhaseFunctionSamples))
+		if (!ParseMiePlotData(Path, ImportOptions, PhaseFunctionSamples))
 		{
 			// Error
 			// Log error and continue to next file

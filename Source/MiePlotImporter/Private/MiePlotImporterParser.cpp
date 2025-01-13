@@ -1,11 +1,12 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "MiePlotImporter.h"
+#include "MiePlotImportOptions.h"
 #include "Misc/DefaultValueHelper.h"
 #include "Sampling/VectorSetAnalysis.h"
 
 
-bool FMiePlotImporterModule::ParseMiePlotData(const FString& Path, TArray<FVector4f>& OutPhaseFunctionSamples)
+bool FMiePlotImporterModule::ParseMiePlotData(const FString& Path, const FMiePlotImportOptions& ImportOptions, TArray<FVector4f>& OutPhaseFunctionSamples)
 {
 	// Load and parse data
 	TArray<FString> LoadedFile;
@@ -96,6 +97,13 @@ bool FMiePlotImporterModule::ParseMiePlotData(const FString& Path, TArray<FVecto
 			break;
 		case 2:
 			OutPhaseFunctionSamples.Last().Z = UnPolarizedPhase;
+			if (ImportOptions.bConvertToMonochrome)
+			{
+				// average RGB components to form a monochrome phase value
+				auto& sample = OutPhaseFunctionSamples.Last();
+				float average = (sample.X + sample.Y + sample.Z) / 3.0f;
+				OutPhaseFunctionSamples.Last() = FVector4f(average, average, average, 1.0f);
+			}
 			break;
 		default:
 			// Maths has broken

@@ -39,13 +39,15 @@ public class MiePlotImporter : ModuleRules
 				"EditorFramework",
 				"UnrealEd",
 				"ToolMenus",
+				"ToolWidgets",
 				"CoreUObject",
 				"Engine",
 				"Slate",
 				"SlateCore",
+                "ApplicationCore",
 				// ... add private dependencies that you statically link with here ...	
 			}
-			);
+            );
 		
 		
 		DynamicallyLoadedModuleNames.AddRange(
