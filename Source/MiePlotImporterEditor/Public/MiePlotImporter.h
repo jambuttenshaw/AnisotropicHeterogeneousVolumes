@@ -11,6 +11,8 @@ DECLARE_LOG_CATEGORY_EXTERN(LogMiePlotImporter, Log, All);
 
 struct FMiePlotImportOptions;
 
+class UPhaseFunction;
+
 
 class FMiePlotImporterModule : public IModuleInterface
 {
@@ -30,6 +32,10 @@ private:
 private:
 	// Main import functionality
 	static void Import();
+	static bool CreatePhaseFunctionLUT(const FString& FileName, const TArray<FVector4f>& PhaseFunctionSamples, UTexture2D** OutTexture);
+	static bool CreatePhaseFunctionAsset(const FString& FileName, UPhaseFunction** OutPhaseFunction);
+
+	static bool SaveAsset(UObject* Asset);
 
 	// Helper functions
 	static bool OpenFileDialogue(TArray<FString>& FilePaths,
@@ -42,6 +48,7 @@ private:
 	static void* GetWindowHandle();
 
 	static bool ParseMiePlotData(const FString& Path, const FMiePlotImportOptions& ImportOptions, TArray<FVector4f>& OutPhaseFunctionSamples);
+	static bool ExtractZonalHarmonics(const TArray<FVector4f>& PhaseFunctionSamples, FVector2f& OutZonalHarmonics);
 
 private:
 	TSharedPtr<class FUICommandList> PluginCommands;

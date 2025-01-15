@@ -1,0 +1,29 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "1.0",
+	"FriendlyName": "Anisotropic Heterogeneous Functions",
+	"Description": "Game-level objects and editor tooling required to implement anisotropic heterogeneous volumes. Requires custom engine branch at https://github.com/jambuttenshaw/UnrealEngine/tree/volumetrics",
+	"Category": "Other",
+	"CreatedBy": "Jamie Buttenshaw",
+	"CreatedByURL": "",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"SupportURL": "",
+	"CanContainContent": false,
+	"IsBetaVersion": true,
+	"IsExperimentalVersion": false,
+	"Installed": false,
+	"Modules": [
+		{
+			"Name": "AnisotropicHeterogeneousVolumes",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		},
+		{
+			"Name": "MiePlotImporterEditor",
+			"Type": "Editor",
+			"LoadingPhase": "Default"
+		}
+	]
+}

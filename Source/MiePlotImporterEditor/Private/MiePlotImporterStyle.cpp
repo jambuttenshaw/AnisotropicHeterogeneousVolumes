@@ -41,7 +41,7 @@ const FVector2D Icon20x20(20.0f, 20.0f);
 TSharedRef< FSlateStyleSet > FMiePlotImporterStyle::Create()
 {
 	TSharedRef< FSlateStyleSet > Style = MakeShareable(new FSlateStyleSet("MiePlotImporterStyle"));
-	Style->SetContentRoot(IPluginManager::Get().FindPlugin("MiePlotImporter")->GetBaseDir() / TEXT("Resources"));
+	Style->SetContentRoot(IPluginManager::Get().FindPlugin("AnisotropicHeterogeneousVolumes")->GetBaseDir() / TEXT("Resources"));
 
 	Style->Set("MiePlotImporter.ImportPhaseFunctionLUT", new IMAGE_BRUSH_SVG(TEXT("PlaceholderButtonIcon"), Icon20x20));
 	return Style;

@@ -2,13 +2,14 @@
 
 using UnrealBuildTool;
 
-public class MiePlotImporter : ModuleRules
+public class MiePlotImporterEditor : ModuleRules
 {
-	public MiePlotImporter(ReadOnlyTargetRules Target) : base(Target)
+	public MiePlotImporterEditor(ReadOnlyTargetRules Target) : base(Target)
 	{
-		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
-		
-		PublicIncludePaths.AddRange(
+        PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
+		IncludeOrderVersion = EngineIncludeOrderVersion.Latest;
+
+        PublicIncludePaths.AddRange(
 			new string[] {
 				// ... add public include paths required here ...
 			}
@@ -26,7 +27,7 @@ public class MiePlotImporter : ModuleRules
 			new string[]
 			{
 				"Core",
-				// ... add other public dependencies that you statically link with here ...
+				"AnisotropicHeterogeneousVolumes"
 			}
 			);
 			

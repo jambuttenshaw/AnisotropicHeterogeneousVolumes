@@ -16,11 +16,10 @@
 #include "TextureCompiler.h"
 
 #include "MiePlotImportWindow.h"
+#include "PhaseFunction.h"
 #include "HAL/PlatformApplicationMisc.h"
 #include "Interfaces/IMainFrameModule.h"
 
-
-static const FName MiePlotImporterTabName("MiePlotImporter");
 
 DEFINE_LOG_CATEGORY(LogMiePlotImporter);
 
@@ -146,8 +145,6 @@ void FMiePlotImporterModule::Import()
 	TArray<FString> Paths;
 	if (!OpenFileDialogue(Paths, TEXT("Open MiePlot Data"), TEXT(""), TEXT(""), TEXT(".txt"), true))
 	{
-		// File open failed
-		UE_LOG(LogMiePlotImporter, Error, TEXT("Failed to open file(s) to import."));
 		return;
 	}
 
@@ -177,74 +174,136 @@ void FMiePlotImporterModule::Import()
 			continue;
 		}
 
-		// Dimensions of textures
-		const int32 Width = PhaseFunctionSamples.Num();
-		constexpr int32 Height = 1;
-		constexpr EPixelFormat PixelFormat = EPixelFormat::PF_A32B32G32R32F;
-		constexpr ETextureSourceFormat SourceFormat = ETextureSourceFormat::TSF_RGBA32F;
-
-		// Create Texture Package
-		FString AssetName, PackageName;
-		FAssetToolsModule& AssetToolsModule = FModuleManager::Get().LoadModuleChecked<FAssetToolsModule>("AssetTools");
-		AssetToolsModule.Get().CreateUniqueAssetName("/Game/MiePlot/", FileName, PackageName, AssetName);
-
-		UPackage* Package = CreatePackage(*PackageName);
-		if (!Package)
+		UTexture2D* Texture;
+		if (!CreatePhaseFunctionLUT(FileName, PhaseFunctionSamples, &Texture))
 		{
-			UE_LOG(LogMiePlotImporter, Error, TEXT("Failed to create package '%s'"), *PackageName);
 			continue;
 		}
-
-		// Create the Texture
-		UTexture2D* Texture = NewObject<UTexture2D>(Package, UTexture2D::StaticClass(), FName(*AssetName), EObjectFlags::RF_Public | EObjectFlags::RF_Standalone);
-		Texture->AddToRoot();
 		
-		// Texture Settings
-		FTexturePlatformData* PlatformData = new FTexturePlatformData;
-		PlatformData->SizeX = Width;
-		PlatformData->SizeY = Height;
-		PlatformData->PixelFormat = PixelFormat;
-
-		// Passing the pixels information to the texture
-		FTexture2DMipMap* Mip = new FTexture2DMipMap;
-		Mip->SizeX = Width;
-		Mip->SizeY = Height;
-		Mip->BulkData.Lock(LOCK_READ_WRITE);
-
-		// 4 floats per element
-		const int64 DataSize = Width * Height * sizeof(float) * 4;
-		float* TextureData = reinterpret_cast<float*>(Mip->BulkData.Realloc(DataSize));
-		FMemory::Memcpy(TextureData, PhaseFunctionSamples.GetData(), DataSize);
-
-		Mip->BulkData.Unlock();
-		PlatformData->Mips.Add(Mip);
-		Texture->SetPlatformData(PlatformData);
-
-		Texture->SRGB = 0;
-		Texture->CompressionSettings = TC_HDR;
-		Texture->Source.Init(Width, Height, 1, 1, SourceFormat, reinterpret_cast<const uint8*>(TextureData));
-
-		// Updating Texture & mark it as unsaved
-		Texture->UpdateResource();
-
-		(void)Package->MarkPackageDirty();
-
-		FAssetRegistryModule::AssetCreated(Texture);
-		Package->FullyLoad();
-		FTextureCompilingManager::Get().FinishCompilation({ Texture });
-
-		// Save asset
-		FSavePackageArgs Args;
-		Args.TopLevelFlags = EObjectFlags::RF_Public | EObjectFlags::RF_Standalone;
-		FSavePackageResultStruct SaveResult = UPackage::Save(
-			Package, Texture, *FPackageName::LongPackageNameToFilename(PackageName, FPackageName::GetAssetPackageExtension()), Args);
-		if (!SaveResult.IsSuccessful())
+		UPhaseFunction* PhaseFunction;
+		if (!CreatePhaseFunctionAsset(FileName, &PhaseFunction))
 		{
-			UE_LOG(LogMiePlotImporter, Error, TEXT("Failed to save package '%s'"), *PackageName);
 			continue;
 		}
+
+		PhaseFunction->LUT = Texture;
+		ExtractZonalHarmonics(PhaseFunctionSamples, PhaseFunction->ZonalHarmonics);
+
+		SaveAsset(Texture);
+		SaveAsset(PhaseFunction);
 	}
 }
+
+bool FMiePlotImporterModule::CreatePhaseFunctionLUT(const FString& FileName, const TArray<FVector4f>& PhaseFunctionSamples, UTexture2D** OutTexture)
+{
+	// Dimensions of textures
+	const int32 Width = PhaseFunctionSamples.Num();
+	constexpr int32 Height = 1;
+	constexpr EPixelFormat PixelFormat = EPixelFormat::PF_A32B32G32R32F;
+	constexpr ETextureSourceFormat SourceFormat = ETextureSourceFormat::TSF_RGBA32F;
+
+	// Create Texture Package
+	FString AssetName, PackageName;
+	FAssetToolsModule& AssetToolsModule = FModuleManager::Get().LoadModuleChecked<FAssetToolsModule>("AssetTools");
+	AssetToolsModule.Get().CreateUniqueAssetName("/Game/MiePlot/", FileName, PackageName, AssetName);
+
+	UPackage* Package = CreatePackage(*PackageName);
+	if (!Package)
+	{
+		UE_LOG(LogMiePlotImporter, Error, TEXT("Failed to create package '%s'"), *PackageName);
+		return false;
+	}
+
+	// Create the Texture
+	UTexture2D* Texture = NewObject<UTexture2D>(Package, UTexture2D::StaticClass(), FName(*AssetName), EObjectFlags::RF_Public | EObjectFlags::RF_Standalone);
+	Texture->AddToRoot();
+
+	// Texture Settings
+	FTexturePlatformData* PlatformData = new FTexturePlatformData;
+	PlatformData->SizeX = Width;
+	PlatformData->SizeY = Height;
+	PlatformData->PixelFormat = PixelFormat;
+
+	// Passing the pixels information to the texture
+	FTexture2DMipMap* Mip = new FTexture2DMipMap;
+	Mip->SizeX = Width;
+	Mip->SizeY = Height;
+	Mip->BulkData.Lock(LOCK_READ_WRITE);
+
+	// 4 floats per element
+	const int64 DataSize = Width * Height * sizeof(float) * 4;
+	float* TextureData = reinterpret_cast<float*>(Mip->BulkData.Realloc(DataSize));
+	FMemory::Memcpy(TextureData, PhaseFunctionSamples.GetData(), DataSize);
+
+	Mip->BulkData.Unlock();
+	PlatformData->Mips.Add(Mip);
+	Texture->SetPlatformData(PlatformData);
+
+	Texture->SRGB = 0;
+	Texture->CompressionSettings = TC_HDR;
+	Texture->Source.Init(Width, Height, 1, 1, SourceFormat, reinterpret_cast<const uint8*>(TextureData));
+
+	// Updating Texture & mark it as unsaved
+	Texture->UpdateResource();
+
+	(void)Package->MarkPackageDirty();
+
+	FAssetRegistryModule::AssetCreated(Texture);
+	Package->FullyLoad();
+	FTextureCompilingManager::Get().FinishCompilation({ Texture });
+
+	*OutTexture = Texture;
+	return true;
+}
+
+
+bool FMiePlotImporterModule::CreatePhaseFunctionAsset(const FString& FileName, UPhaseFunction** OutPhaseFunction)
+{
+	FString FileNameWithSuffix = FileName + TEXT("_PhaseFunction");
+
+	// Create Texture Package
+	FString AssetName, PackageName;
+	FAssetToolsModule& AssetToolsModule = FModuleManager::Get().LoadModuleChecked<FAssetToolsModule>("AssetTools");
+	AssetToolsModule.Get().CreateUniqueAssetName("/Game/MiePlot/", FileNameWithSuffix, PackageName, AssetName);
+
+	UPackage* Package = CreatePackage(*PackageName);
+	if (!Package)
+	{
+		UE_LOG(LogMiePlotImporter, Error, TEXT("Failed to create package '%s'"), *PackageName);
+		return false;
+	}
+
+	// Create the Texture
+	UPhaseFunction* PhaseFunction = NewObject<UPhaseFunction>(Package, UPhaseFunction::StaticClass(), FName(*AssetName), EObjectFlags::RF_Public | EObjectFlags::RF_Standalone);
+	PhaseFunction->AddToRoot();
+
+	(void)Package->MarkPackageDirty();
+
+	FAssetRegistryModule::AssetCreated(PhaseFunction);
+	Package->FullyLoad();
+
+	*OutPhaseFunction = PhaseFunction;
+	return true;
+}
+
+bool FMiePlotImporterModule::SaveAsset(UObject* Asset)
+{
+	UPackage* Package = Asset->GetPackage();
+	FString PackageName = Package->GetName();
+
+	FSavePackageArgs Args;
+	Args.TopLevelFlags = EObjectFlags::RF_Public | EObjectFlags::RF_Standalone;
+	FSavePackageResultStruct SaveResult = UPackage::Save(
+		Package, Asset, *FPackageName::LongPackageNameToFilename(PackageName, FPackageName::GetAssetPackageExtension()), Args);
+	if (!SaveResult.IsSuccessful())
+	{
+		UE_LOG(LogMiePlotImporter, Error, TEXT("Failed to save package '%s'"), *PackageName);
+		return false;
+	}
+
+	return true;
+}
+
 
 
 #undef LOCTEXT_NAMESPACE

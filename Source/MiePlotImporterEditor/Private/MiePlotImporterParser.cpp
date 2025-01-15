@@ -121,9 +121,8 @@ bool FMiePlotImporterModule::ParseMiePlotData(const FString& Path, const FMiePlo
 
 	// Normalize phase function by numerically integrating over the surface of the sphere
 
-	auto SamplePhaseLUT = [&](const FVector3f& Direction)-> FVector4f
+	auto SamplePhaseLUT = [&](float cosTheta)-> FVector4f
 		{
-			const float cosTheta = FMath::Clamp(FVector3f::DotProduct(Direction, FVector3f(0.0f, 0.0f, 1.0f)), -1.0f, 1.0f);
 			const float theta = FMath::Acos(cosTheta);
 
 			float uv = theta / PI;
@@ -147,13 +146,10 @@ bool FMiePlotImporterModule::ParseMiePlotData(const FString& Path, const FMiePlo
 		FVector2D UV = { FMath::RandRange(0.0f, 1.0f), FMath::RandRange(0.0f, 1.0f) };
 
 		// Map UV onto surface of sphere
+		// Phase functions only depend on theta
 		float CosTheta = 2.0f * UV.X - 1.0f;
-		float Phi = 2.0f * PI * UV.Y;
-		float SinTheta = CosTheta >= 1 ? 0 : FMath::Sqrt(1.0f - CosTheta * CosTheta);
-		float SinPhi = FMath::Sin(Phi);
-		float CosPhi = FMath::Cos(Phi);
 
-		FVector4f PhaseSample = SamplePhaseLUT({ SinTheta * CosPhi, CosTheta, SinTheta * SinPhi });
+		FVector4f PhaseSample = SamplePhaseLUT(CosTheta);
 		Accumulator += PhaseSample / UniformSpherePDF;
 	}
 	Accumulator /= static_cast<float>(NumSamples);
