@@ -91,13 +91,14 @@ FAnisotropicHeterogeneousVolumeSceneProxy::FAnisotropicHeterogeneousVolumeSceneP
 	HeterogeneousVolumeData.bPivotAtCentroid = InComponent->bPivotAtCentroid;
 	HeterogeneousVolumeData.bHoldout = InComponent->bHoldout;
 
-	HeterogeneousVolumeData.PhaseFunctionMethod = static_cast<int>(InComponent->PhaseFunctionMethod.GetIntValue());
+	HeterogeneousVolumeData.PhaseFunctionMethod = static_cast<int>(InComponent->PhaseFunctionMethod);
 	if (InComponent->DiscretePhaseFunction &&
-		InComponent->DiscretePhaseFunction->LUT.IsValid())
+		!InComponent->DiscretePhaseFunction->LUT.IsNull())
 	{
-		HeterogeneousVolumeData.PhaseFunctionLUT = InComponent->DiscretePhaseFunction->LUT.Get();
-		HeterogeneousVolumeData.PhaseFunctionZonalHarmonics = InComponent->DiscretePhaseFunction->ZonalHarmonics;
+		UTexture* LUT = InComponent->DiscretePhaseFunction->LUT.LoadSynchronous();
+		HeterogeneousVolumeData.PhaseFunctionLUT = LUT;
 
+		HeterogeneousVolumeData.PhaseFunctionZonalHarmonics = InComponent->DiscretePhaseFunction->ZonalHarmonics;
 	}
 	else
 	{
@@ -107,7 +108,7 @@ FAnisotropicHeterogeneousVolumeSceneProxy::FAnisotropicHeterogeneousVolumeSceneP
 		if (HeterogeneousVolumeData.PhaseFunctionMethod == 1)
 			HeterogeneousVolumeData.PhaseFunctionMethod = 0;
 	}
-	if (InComponent->PhaseFunctionMethod == PhaseFunctionMethod_HenyeyGreenstein)
+	if (InComponent->PhaseFunctionMethod == EHeterogeneousVolumePhaseFunctionMethod::HenyeyGreenstein)
 	{
 		HeterogeneousVolumeData.PhaseFunctionZonalHarmonics =
 		{

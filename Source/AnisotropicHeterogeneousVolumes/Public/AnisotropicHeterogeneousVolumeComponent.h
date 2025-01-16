@@ -11,11 +11,11 @@
 
 
 UENUM()
-enum EHeterogeneousVolumePhaseFunctionMethod : int
+enum class EHeterogeneousVolumePhaseFunctionMethod : uint8
 {
-	PhaseFunctionMethod_Isotropic = 0,
-	PhaseFunctionMethod_Discrete = 1,
-	PhaseFunctionMethod_HenyeyGreenstein = 2
+	Isotropic = 0,
+	Discrete = 1,
+	HenyeyGreenstein = 2
 };
 
 
@@ -30,17 +30,16 @@ class ANISOTROPICHETEROGENEOUSVOLUMES_API UAnisotropicHeterogeneousVolumeCompone
 public:
 
 	UPROPERTY(EditAnywhere, Category = Lighting)
-	TEnumAsByte<enum EHeterogeneousVolumePhaseFunctionMethod> PhaseFunctionMethod;
+	EHeterogeneousVolumePhaseFunctionMethod PhaseFunctionMethod;
 
-	UPROPERTY(EditAnywhere, Category = Lighting, meta = (EditCondition = "PhaseFunctionMethod == PhaseFunctionMethod_Discrete"))
+	UPROPERTY(EditAnywhere, Category = Lighting, meta = (EditCondition = "PhaseFunctionMethod == EHeterogeneousVolumePhaseFunctionMethod::Discrete"))
 	TObjectPtr<UPhaseFunction> DiscretePhaseFunction;
 
 	UPROPERTY(EditAnywhere, Category = Lighting,
-		meta = (EditCondition = "PhaseFunctionMethod == PhaseFunctionMethod_HenyeyGreenstein", ClampMin = "-0.999", ClampMax = "0.999"))
+		meta = (EditCondition = "PhaseFunctionMethod == EHeterogeneousVolumePhaseFunctionMethod::HenyeyGreenstein", ClampMin = "-0.999", ClampMax = "0.999"))
 	float HGAnisotropy;
 
 public:
-
 	virtual FPrimitiveSceneProxy* CreateSceneProxy() override;
 
 };
