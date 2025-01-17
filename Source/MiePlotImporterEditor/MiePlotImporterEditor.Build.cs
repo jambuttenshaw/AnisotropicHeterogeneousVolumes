@@ -27,7 +27,7 @@ public class MiePlotImporterEditor : ModuleRules
 			new string[]
 			{
 				"Core",
-				"AnisotropicHeterogeneousVolumes"
+				"AnisotropicVolumetrics"
 			}
 			);
 			

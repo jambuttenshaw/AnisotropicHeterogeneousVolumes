@@ -5,7 +5,7 @@
 #include "AnisotropicHeterogeneousVolume.generated.h"
 
 UCLASS(showcategories = (Movement, Rendering, Transformation, DataLayers, "Input|MouseInput", "Input|TouchInput"), ClassGroup = Fog, hidecategories = (Info, Object, Input))
-class ANISOTROPICHETEROGENEOUSVOLUMES_API AAnisotropicHeterogeneousVolume : public AInfo
+class ANISOTROPICVOLUMETRICS_API AAnisotropicHeterogeneousVolume : public AInfo
 {
 	GENERATED_BODY()
 

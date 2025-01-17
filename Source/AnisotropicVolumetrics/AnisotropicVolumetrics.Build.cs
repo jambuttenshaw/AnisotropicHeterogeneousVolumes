@@ -1,8 +1,8 @@
 using UnrealBuildTool;
 
-public class AnisotropicHeterogeneousVolumes : ModuleRules
+public class AnisotropicVolumetrics : ModuleRules
 {
-    public AnisotropicHeterogeneousVolumes(ReadOnlyTargetRules Target) : base(Target)
+    public AnisotropicVolumetrics(ReadOnlyTargetRules Target) : base(Target)
     {
         PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 

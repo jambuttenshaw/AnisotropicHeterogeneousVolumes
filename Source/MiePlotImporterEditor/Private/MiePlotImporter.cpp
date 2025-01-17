@@ -16,7 +16,7 @@
 #include "TextureCompiler.h"
 
 #include "MiePlotImportWindow.h"
-#include "PhaseFunction.h"
+#include "DiscretePhaseFunction.h"
 #include "HAL/PlatformApplicationMisc.h"
 #include "Interfaces/IMainFrameModule.h"
 
@@ -180,7 +180,7 @@ void FMiePlotImporterModule::Import()
 			continue;
 		}
 		
-		UPhaseFunction* PhaseFunction;
+		UDiscretePhaseFunction* PhaseFunction;
 		if (!CreatePhaseFunctionAsset(FileName, &PhaseFunction))
 		{
 			continue;
@@ -241,6 +241,8 @@ bool FMiePlotImporterModule::CreatePhaseFunctionLUT(const FString& FileName, con
 
 	Texture->SRGB = 0;
 	Texture->CompressionSettings = TC_HDR;
+	Texture->AddressX = TA_Clamp;
+	Texture->AddressY = TA_Clamp;
 	Texture->Source.Init(Width, Height, 1, 1, SourceFormat, reinterpret_cast<const uint8*>(TextureData));
 
 	// Updating Texture & mark it as unsaved
@@ -257,7 +259,7 @@ bool FMiePlotImporterModule::CreatePhaseFunctionLUT(const FString& FileName, con
 }
 
 
-bool FMiePlotImporterModule::CreatePhaseFunctionAsset(const FString& FileName, UPhaseFunction** OutPhaseFunction)
+bool FMiePlotImporterModule::CreatePhaseFunctionAsset(const FString& FileName, UDiscretePhaseFunction** OutPhaseFunction)
 {
 	FString FileNameWithSuffix = FileName + TEXT("_PhaseFunction");
 
@@ -274,7 +276,7 @@ bool FMiePlotImporterModule::CreatePhaseFunctionAsset(const FString& FileName, U
 	}
 
 	// Create the Texture
-	UPhaseFunction* PhaseFunction = NewObject<UPhaseFunction>(Package, UPhaseFunction::StaticClass(), FName(*AssetName), EObjectFlags::RF_Public | EObjectFlags::RF_Standalone);
+	UDiscretePhaseFunction* PhaseFunction = NewObject<UDiscretePhaseFunction>(Package, UDiscretePhaseFunction::StaticClass(), FName(*AssetName), EObjectFlags::RF_Public | EObjectFlags::RF_Standalone);
 	PhaseFunction->AddToRoot();
 
 	(void)Package->MarkPackageDirty();
