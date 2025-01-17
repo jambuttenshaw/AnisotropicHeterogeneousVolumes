@@ -158,6 +158,13 @@ bool FMiePlotImporterModule::ParseMiePlotData(const FString& Path, const FMiePlo
 	for (auto& PhaseSample : OutPhaseFunctionSamples)
 	{
 		PhaseSample /= Accumulator;
+
+		if (ImportOptions.bClampPhaseSamples)
+		{
+			PhaseSample.X = FMath::Clamp(PhaseSample.X, ImportOptions.PhaseSampleClampMin, ImportOptions.PhaseSampleClampMax);
+			PhaseSample.Y = FMath::Clamp(PhaseSample.Y, ImportOptions.PhaseSampleClampMin, ImportOptions.PhaseSampleClampMax);
+			PhaseSample.Z = FMath::Clamp(PhaseSample.Z, ImportOptions.PhaseSampleClampMin, ImportOptions.PhaseSampleClampMax);
+		}
 	}
 
 	return true;

@@ -132,6 +132,80 @@ void SMiePlotImportWindow::Construct(const FArguments& InArgs)
 				.IsChecked(ImportOptions->bConvertToMonochrome)
 			]
 		]
+		+ SVerticalBox::Slot()
+		.AutoHeight()
+		.Padding(2)
+		[
+			SNew(SHorizontalBox)
+				+ SHorizontalBox::Slot()
+				.VAlign(VAlign_Center)
+				.HAlign(HAlign_Right)
+				.AutoWidth()
+				.Padding(2)
+				[
+					SNew(STextBlock)
+					.Text(LOCTEXT("ClampSamplesCheckBoxLabel", "Clamp Phase Samples"))
+				]
+				+ SHorizontalBox::Slot()
+				.VAlign(VAlign_Center)
+				.HAlign(HAlign_Right)
+				.AutoWidth()
+				.Padding(2)
+				[
+					SAssignNew(ClampSamplesCheckBox, SCheckBox)
+					.IsChecked(ImportOptions->bClampPhaseSamples)
+				]
+		]
+		+ SVerticalBox::Slot()
+		.AutoHeight()
+		.Padding(2)
+		[
+			SNew(SHorizontalBox)
+				+ SHorizontalBox::Slot()
+				.VAlign(VAlign_Center)
+				.HAlign(HAlign_Right)
+				.AutoWidth()
+				.Padding(2)
+				[
+					SNew(STextBlock)
+					.Text(LOCTEXT("ClampSamplesMinEntryBoxLabel", "Clamp Phase Samples Min"))
+				]
+				+ SHorizontalBox::Slot()
+				.VAlign(VAlign_Center)
+				.HAlign(HAlign_Right)
+				.AutoWidth()
+				.Padding(2)
+				[
+					SAssignNew(ClampSamplesMinEntryBox, SNumericEntryBox<float>)
+					.Value(this, &SMiePlotImportWindow::GetClampSamplesMin)
+					.OnValueCommitted(this, &SMiePlotImportWindow::SetClampSamplesMin)
+				]
+		]
+		+ SVerticalBox::Slot()
+		.AutoHeight()
+		.Padding(2)
+		[
+			SNew(SHorizontalBox)
+				+ SHorizontalBox::Slot()
+				.VAlign(VAlign_Center)
+				.HAlign(HAlign_Right)
+				.AutoWidth()
+				.Padding(2)
+				[
+					SNew(STextBlock)
+					.Text(LOCTEXT("ClampSamplesMaxEntryBoxLabel", "Clamp Phase Samples Max"))
+				]
+				+ SHorizontalBox::Slot()
+				.VAlign(VAlign_Center)
+				.HAlign(HAlign_Right)
+				.AutoWidth()
+				.Padding(2)
+				[
+					SAssignNew(ClampSamplesMaxEntryBox, SNumericEntryBox<float>)
+					.Value(this, &SMiePlotImportWindow::GetClampSamplesMax)
+					.OnValueCommitted(this, &SMiePlotImportWindow::SetClampSamplesMax)
+				]
+		]
 	);
 
 	RegisterActiveTimer(0.f, FWidgetActiveTimerDelegate::CreateSP(this, &SMiePlotImportWindow::SetFocusPostConstruct));
@@ -189,5 +263,26 @@ bool SMiePlotImportWindow::CanImport() const
 void SMiePlotImportWindow::UpdateImportOptions()
 {
 	ImportOptions->bConvertToMonochrome = ConvertToMonochromeCheckBox->IsChecked();
+	ImportOptions->bClampPhaseSamples = ClampSamplesCheckBox->IsChecked();
 }
 
+
+TOptional<float> SMiePlotImportWindow::GetClampSamplesMin() const
+{
+	return ImportOptions->PhaseSampleClampMin;
+}
+
+TOptional<float> SMiePlotImportWindow::GetClampSamplesMax() const
+{
+	return ImportOptions->PhaseSampleClampMax;
+}
+
+void SMiePlotImportWindow::SetClampSamplesMin(float val, ETextCommit::Type)
+{
+	ImportOptions->PhaseSampleClampMin = val;
+}
+
+void SMiePlotImportWindow::SetClampSamplesMax(float val, ETextCommit::Type)
+{
+	ImportOptions->PhaseSampleClampMax = val;
+}
