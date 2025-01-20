@@ -2,8 +2,8 @@
 	"FileVersion": 3,
 	"Version": 1,
 	"VersionName": "1.0",
-	"FriendlyName": "Anisotropic Volumetrics",
-	"Description": "Game-level objects and editor tooling required to implement anisotropic volumetrics. Requires custom engine branch at https://github.com/jambuttenshaw/UnrealEngine/tree/volumetrics",
+	"FriendlyName": "MiePlotImporter",
+	"Description": "Importer tool to create LUT from data exported from MiePlot. To render volumetrics using the phase function LUTS requires my custom engine branch at https://github.com/jambuttenshaw/UnrealEngine/tree/volumetrics",
 	"Category": "Other",
 	"CreatedBy": "Jamie Buttenshaw",
 	"CreatedByURL": "",
@@ -15,11 +15,6 @@
 	"IsExperimentalVersion": false,
 	"Installed": false,
 	"Modules": [
-		{
-			"Name": "AnisotropicVolumetrics",
-			"Type": "Runtime",
-			"LoadingPhase": "Default"
-		},
 		{
 			"Name": "MiePlotImporterEditor",
 			"Type": "Editor",

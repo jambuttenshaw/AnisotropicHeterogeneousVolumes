@@ -26,8 +26,7 @@ public class MiePlotImporterEditor : ModuleRules
 		PublicDependencyModuleNames.AddRange(
 			new string[]
 			{
-				"Core",
-				"AnisotropicVolumetrics"
+				"Core"
 			}
 			);
 			

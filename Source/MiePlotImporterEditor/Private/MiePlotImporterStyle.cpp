@@ -36,14 +36,13 @@ FName FMiePlotImporterStyle::GetStyleSetName()
 
 
 const FVector2D Icon16x16(16.0f, 16.0f);
-const FVector2D Icon20x20(20.0f, 20.0f);
 
 TSharedRef< FSlateStyleSet > FMiePlotImporterStyle::Create()
 {
 	TSharedRef< FSlateStyleSet > Style = MakeShareable(new FSlateStyleSet("MiePlotImporterStyle"));
-	Style->SetContentRoot(IPluginManager::Get().FindPlugin("AnisotropicVolumetrics")->GetBaseDir() / TEXT("Resources"));
+	Style->SetContentRoot(IPluginManager::Get().FindPlugin("MiePlotImporter")->GetBaseDir() / TEXT("Resources"));
 
-	Style->Set("MiePlotImporter.ImportPhaseFunctionLUT", new IMAGE_BRUSH_SVG(TEXT("PlaceholderButtonIcon"), Icon20x20));
+	Style->Set("MiePlotImporter.ImportPhaseFunctionLUT", new IMAGE_BRUSH(TEXT("Icon"), Icon16x16));
 	return Style;
 }
 
