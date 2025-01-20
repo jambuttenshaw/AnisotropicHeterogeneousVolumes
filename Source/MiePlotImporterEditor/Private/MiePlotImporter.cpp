@@ -174,20 +174,33 @@ void FMiePlotImporterModule::Import()
 			continue;
 		}
 
-		UTexture2D* Texture;
-		if (!CreatePhaseFunctionLUT(FileName, PhaseFunctionSamples, &Texture))
-		{
-			continue;
-		}
-		
+		// Create the asset to wrap all the phase function data
 		UDiscretePhaseFunction* PhaseFunction;
 		if (!CreatePhaseFunctionAsset(FileName, &PhaseFunction))
 		{
+			UE_LOG(LogMiePlotImporter, Error, TEXT("Failed to Discrete Phase Function Asset."));
 			continue;
 		}
 
-		PhaseFunction->LUT = Texture;
+		// Process phase function data
+		Normalize(PhaseFunctionSamples);
+		if (ImportOptions.bClampPhaseSamples)
+		{
+			Clamp(PhaseFunctionSamples, ImportOptions.PhaseSampleClampMin, ImportOptions.PhaseSampleClampMax);
+		}
 		ExtractZonalHarmonics(PhaseFunctionSamples, PhaseFunction->ZonalHarmonics);
+
+		// Create the texture to hold the LUT
+		UTexture2D* Texture;
+		if (!CreatePhaseFunctionLUT(FileName, PhaseFunctionSamples, &Texture))
+		{
+			UE_LOG(LogMiePlotImporter, Error, TEXT("Failed to create LUT."));
+			continue;
+		}
+		PhaseFunction->LUT = Texture;
+
+		// Get the magnitude after all processing has been performed to determine how energy-conserving the final LUT is
+		GetMagnitude(PhaseFunctionSamples, PhaseFunction->Magnitude);
 
 		SaveAsset(Texture);
 		SaveAsset(PhaseFunction);
@@ -310,4 +323,4 @@ bool FMiePlotImporterModule::SaveAsset(UObject* Asset)
 
 #undef LOCTEXT_NAMESPACE
 	
-IMPLEMENT_MODULE(FMiePlotImporterModule, MiePlotImporter)
+IMPLEMENT_MODULE(FMiePlotImporterModule, MiePlotImporterEditor)

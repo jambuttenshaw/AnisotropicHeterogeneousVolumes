@@ -48,7 +48,12 @@ private:
 	static void* GetWindowHandle();
 
 	static bool ParseMiePlotData(const FString& Path, const FMiePlotImportOptions& ImportOptions, TArray<FVector4f>& OutPhaseFunctionSamples);
-	static bool ExtractZonalHarmonics(const TArray<FVector4f>& PhaseFunctionSamples, FVector2f& OutZonalHarmonics);
+
+	// Process data
+	static void GetMagnitude(const TArray<FVector4f>& PhaseFunctionSamples, FVector4f& OutMagnitude);
+	static void Normalize(TArray<FVector4f>& PhaseFunctionSamples);
+	static void Clamp(TArray<FVector4f>& PhaseFunctionSamples, float Min, float Max);
+	static void ExtractZonalHarmonics(const TArray<FVector4f>& PhaseFunctionSamples, FVector2f& OutZonalHarmonics);
 
 private:
 	TSharedPtr<class FUICommandList> PluginCommands;

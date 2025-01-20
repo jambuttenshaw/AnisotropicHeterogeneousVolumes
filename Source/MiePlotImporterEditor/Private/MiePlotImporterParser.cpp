@@ -119,53 +119,5 @@ bool FMiePlotImporterModule::ParseMiePlotData(const FString& Path, const FMiePlo
 		return false;
 	}
 
-	// Normalize phase function by numerically integrating over the surface of the sphere
-
-	auto SamplePhaseLUT = [&](float cosTheta)-> FVector4f
-		{
-			const float theta = FMath::Acos(cosTheta);
-
-			float uv = theta / PI;
-			float tc = uv * static_cast<float>(OutPhaseFunctionSamples.Num() - 1);
-
-			return FMath::Lerp(
-				OutPhaseFunctionSamples[FMath::FloorToInt(tc)],
-				OutPhaseFunctionSamples[FMath::CeilToInt(tc)],
-				FMath::Frac(tc)
-			);
-		};
-
-	constexpr float UniformSpherePDF = 1.0f / (4.0f * PI);
-
-	// Perform Monte Carlo integration
-	constexpr uint32 NumSamples = 1'000'000;
-	FVector4f Accumulator{ 0.0f, 0.0f, 0.0f };
-
-	for (uint32 Sample = 0; Sample < NumSamples; Sample++)
-	{
-		FVector2D UV = { FMath::RandRange(0.0f, 1.0f), FMath::RandRange(0.0f, 1.0f) };
-
-		// Map UV onto surface of sphere
-		// Phase functions only depend on theta
-		float CosTheta = 2.0f * UV.X - 1.0f;
-
-		FVector4f PhaseSample = SamplePhaseLUT(CosTheta);
-		Accumulator += PhaseSample / UniformSpherePDF;
-	}
-	Accumulator /= static_cast<float>(NumSamples);
-
-	// Normalize the data
-	for (auto& PhaseSample : OutPhaseFunctionSamples)
-	{
-		PhaseSample /= Accumulator;
-
-		if (ImportOptions.bClampPhaseSamples)
-		{
-			PhaseSample.X = FMath::Clamp(PhaseSample.X, ImportOptions.PhaseSampleClampMin, ImportOptions.PhaseSampleClampMax);
-			PhaseSample.Y = FMath::Clamp(PhaseSample.Y, ImportOptions.PhaseSampleClampMin, ImportOptions.PhaseSampleClampMax);
-			PhaseSample.Z = FMath::Clamp(PhaseSample.Z, ImportOptions.PhaseSampleClampMin, ImportOptions.PhaseSampleClampMax);
-		}
-	}
-
 	return true;
 }
