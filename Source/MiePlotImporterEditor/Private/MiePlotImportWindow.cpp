@@ -3,7 +3,9 @@
 #include "SPrimaryButton.h"
 
 #include "MiePlotImportOptions.h"
+#include "PhaseFunctionOperations.h"
 #include "Widgets/Layout/SUniformGridPanel.h"
+#include "SPhaseFunctionWidget.h"
 
 
 #define LOCTEXT_NAMESPACE "SMiePlotImportWindow"
@@ -12,7 +14,20 @@
 void SMiePlotImportWindow::Construct(const FArguments& InArgs)
 {
 	ImportOptions = InArgs._ImportOptions;
+	pPhaseFunctionSamples = InArgs._pPhaseFunctionSamples;
 	WidgetWindow = InArgs._WidgetWindow;
+
+	NumberFormattingOptions
+		.SetMinimumIntegralDigits(1)
+		.SetMaximumIntegralDigits(1)
+		.SetMinimumFractionalDigits(3)
+		.SetMaximumFractionalDigits(3);
+
+	// Create copy of the phase function samples to preview
+	PhaseFunctionSamplesPreview = *pPhaseFunctionSamples;
+	FPhaseFunctionOperations::ApplyImportOptions(PhaseFunctionSamplesPreview, *ImportOptions);
+
+	FPhaseFunctionOperations::GetMagnitude(PhaseFunctionSamplesPreview, PhaseFunctionMagnitude);
 
 	TSharedPtr<SBox> InspectorBox;
 
@@ -53,10 +68,34 @@ void SMiePlotImportWindow::Construct(const FArguments& InArgs)
 				.AutoHeight()
 				.Padding(2)
 				[
-					SAssignNew(InspectorBox, SBox)
-					.MinDesiredHeight(200.0f)
-					.MaxDesiredHeight(650.0f)
-					.WidthOverride(400.0f)
+					SNew(SHorizontalBox)
+						+ SHorizontalBox::Slot()
+						.VAlign(VAlign_Center)
+						.HAlign(HAlign_Left)
+						.AutoWidth()
+						.Padding(2)
+						[
+							SNew(SBorder)
+								.Padding(FMargin(3))
+								.BorderImage(FAppStyle::GetBrush("ToolPanel.GroupBorder"))
+								[
+									SAssignNew(PhaseFunctionWidget, SPhaseFunctionWidget)
+									.ImportOptions(ImportOptions)
+									.PhaseFunctionSamples(&PhaseFunctionSamplesPreview)
+								]
+						]
+						+ SHorizontalBox::Slot()
+						.VAlign(VAlign_Center)
+						.HAlign(HAlign_Right)
+						.AutoWidth()
+						.Padding(2)
+						[
+							SAssignNew(InspectorBox, SBox)
+								//.MinDesiredHeight(200.0f)
+								//.MaxDesiredHeight(650.0f)
+								//.WidthOverride(400.0f)
+						]
+					
 				]
 				+ SVerticalBox::Slot()
 				.AutoHeight()
@@ -110,13 +149,14 @@ void SMiePlotImportWindow::Construct(const FArguments& InArgs)
 		SNew(SVerticalBox)
 		+ SVerticalBox::Slot()
 		.AutoHeight()
+		.VAlign(VAlign_Top)
 		.Padding(2)
 		[
 			SNew(SHorizontalBox)
 			+ SHorizontalBox::Slot()
 			.VAlign(VAlign_Center)
-			.HAlign(HAlign_Right)
-			.AutoWidth()
+			.HAlign(HAlign_Left)
+			.FillWidth(1.0f)
 			.Padding(2)
 			[
 				SNew(STextBlock)
@@ -130,17 +170,19 @@ void SMiePlotImportWindow::Construct(const FArguments& InArgs)
 			[
 				SAssignNew(ConvertToMonochromeCheckBox, SCheckBox)
 				.IsChecked(ImportOptions->bConvertToMonochrome)
+				.OnCheckStateChanged(this, &SMiePlotImportWindow::OnCheckedStateChanged)
 			]
 		]
 		+ SVerticalBox::Slot()
 		.AutoHeight()
+		.VAlign(VAlign_Top)
 		.Padding(2)
 		[
 			SNew(SHorizontalBox)
 				+ SHorizontalBox::Slot()
 				.VAlign(VAlign_Center)
-				.HAlign(HAlign_Right)
-				.AutoWidth()
+				.HAlign(HAlign_Left)
+				.FillWidth(1.0f)
 				.Padding(2)
 				[
 					SNew(STextBlock)
@@ -154,17 +196,19 @@ void SMiePlotImportWindow::Construct(const FArguments& InArgs)
 				[
 					SAssignNew(ClampSamplesCheckBox, SCheckBox)
 					.IsChecked(ImportOptions->bClampPhaseSamples)
+					.OnCheckStateChanged(this, &SMiePlotImportWindow::OnCheckedStateChanged)
 				]
 		]
 		+ SVerticalBox::Slot()
 		.AutoHeight()
+		.VAlign(VAlign_Top)
 		.Padding(2)
 		[
 			SNew(SHorizontalBox)
 				+ SHorizontalBox::Slot()
 				.VAlign(VAlign_Center)
-				.HAlign(HAlign_Right)
-				.AutoWidth()
+				.HAlign(HAlign_Left)
+				.FillWidth(1.0f)
 				.Padding(2)
 				[
 					SNew(STextBlock)
@@ -183,13 +227,14 @@ void SMiePlotImportWindow::Construct(const FArguments& InArgs)
 		]
 		+ SVerticalBox::Slot()
 		.AutoHeight()
+		.VAlign(VAlign_Top)
 		.Padding(2)
 		[
 			SNew(SHorizontalBox)
 				+ SHorizontalBox::Slot()
 				.VAlign(VAlign_Center)
-				.HAlign(HAlign_Right)
-				.AutoWidth()
+				.HAlign(HAlign_Left)
+				.FillWidth(1.0f)
 				.Padding(2)
 				[
 					SNew(STextBlock)
@@ -206,6 +251,80 @@ void SMiePlotImportWindow::Construct(const FArguments& InArgs)
 					.OnValueCommitted(this, &SMiePlotImportWindow::SetClampSamplesMax)
 				]
 		]
+		+ SVerticalBox::Slot()
+		.AutoHeight()
+		.VAlign(VAlign_Top)
+		.Padding(2)
+		[
+			SNew(SHorizontalBox)
+			+ SHorizontalBox::Slot()
+			.VAlign(VAlign_Center)
+			.HAlign(HAlign_Left)
+			.FillWidth(1.0f)
+			.Padding(2)
+			[
+				SNew(STextBlock)
+				.Text(LOCTEXT("ReNormalizeCheckBoxLabel", "Re-Normalize"))
+			]
+			+ SHorizontalBox::Slot()
+			.VAlign(VAlign_Center)
+			.HAlign(HAlign_Right)
+			.AutoWidth()
+			.Padding(2)
+			[
+				SAssignNew(ReNormalizeCheckBox, SCheckBox)
+				.IsChecked(ImportOptions->bReNormalize)
+				.OnCheckStateChanged(this, &SMiePlotImportWindow::OnCheckedStateChanged)
+			]
+		]
+		+ SVerticalBox::Slot()
+		.FillHeight(1.0f)
+		.VAlign(VAlign_Bottom)
+		.Padding(2)
+		[
+			SNew(SHorizontalBox)
+			+ SHorizontalBox::Slot()
+			.VAlign(VAlign_Center)
+			.HAlign(HAlign_Left)
+			.FillWidth(1.0f)
+			.Padding(2)
+			[
+				SNew(STextBlock)
+				.Text(LOCTEXT("MagnitudeLabel", "Magnitude"))
+			]
+			+ SHorizontalBox::Slot()
+			.VAlign(VAlign_Top)
+			.HAlign(HAlign_Right)
+			.AutoWidth()
+			.Padding(2)
+			[
+				SNew(SVerticalBox)
+				+ SVerticalBox::Slot()
+				.VAlign(VAlign_Center)
+				.HAlign(HAlign_Right)
+				.Padding(2)
+				[
+					SAssignNew(MagnitudeRLabel, STextBlock)
+					.Text(FText::AsNumber(PhaseFunctionMagnitude.X, &NumberFormattingOptions))
+				]
+				+ SVerticalBox::Slot()
+				.VAlign(VAlign_Center)
+				.HAlign(HAlign_Right)
+				.Padding(2)
+				[
+					SAssignNew(MagnitudeGLabel, STextBlock)
+					.Text(FText::AsNumber(PhaseFunctionMagnitude.Y, &NumberFormattingOptions))
+				]
+				+ SVerticalBox::Slot()
+				.VAlign(VAlign_Center)
+				.HAlign(HAlign_Right)
+				.Padding(2)
+				[
+					SAssignNew(MagnitudeBLabel, STextBlock)
+					.Text(FText::AsNumber(PhaseFunctionMagnitude.Z, &NumberFormattingOptions))
+				]
+			]
+		]
 	);
 
 	RegisterActiveTimer(0.f, FWidgetActiveTimerDelegate::CreateSP(this, &SMiePlotImportWindow::SetFocusPostConstruct));
@@ -214,8 +333,6 @@ void SMiePlotImportWindow::Construct(const FArguments& InArgs)
 FReply SMiePlotImportWindow::OnImport()
 {
 	bShouldImport = true;
-	UpdateImportOptions();
-
 	if (WidgetWindow.IsValid())
 	{
 		WidgetWindow.Pin()->RequestDestroyWindow();
@@ -259,11 +376,27 @@ bool SMiePlotImportWindow::CanImport() const
 	return true;
 }
 
+void SMiePlotImportWindow::OnCheckedStateChanged(ECheckBoxState State)
+{
+	OnAnyImportOptionsChanged();
+}
 
-void SMiePlotImportWindow::UpdateImportOptions()
+void SMiePlotImportWindow::OnAnyImportOptionsChanged()
 {
 	ImportOptions->bConvertToMonochrome = ConvertToMonochromeCheckBox->IsChecked();
 	ImportOptions->bClampPhaseSamples = ClampSamplesCheckBox->IsChecked();
+	ImportOptions->bReNormalize = ReNormalizeCheckBox->IsChecked();
+
+	// Re-process samples
+	PhaseFunctionSamplesPreview = *pPhaseFunctionSamples;
+	FPhaseFunctionOperations::ApplyImportOptions(PhaseFunctionSamplesPreview, *ImportOptions);
+
+	PhaseFunctionWidget->RescaleAxes();
+
+	FPhaseFunctionOperations::GetMagnitude(PhaseFunctionSamplesPreview, PhaseFunctionMagnitude);
+	MagnitudeRLabel->SetText(FText::AsNumber(PhaseFunctionMagnitude.X, &NumberFormattingOptions));
+	MagnitudeGLabel->SetText(FText::AsNumber(PhaseFunctionMagnitude.Y, &NumberFormattingOptions));
+	MagnitudeBLabel->SetText(FText::AsNumber(PhaseFunctionMagnitude.Z, &NumberFormattingOptions));
 }
 
 
@@ -280,9 +413,11 @@ TOptional<float> SMiePlotImportWindow::GetClampSamplesMax() const
 void SMiePlotImportWindow::SetClampSamplesMin(float val, ETextCommit::Type)
 {
 	ImportOptions->PhaseSampleClampMin = val;
+	OnAnyImportOptionsChanged();
 }
 
 void SMiePlotImportWindow::SetClampSamplesMax(float val, ETextCommit::Type)
 {
 	ImportOptions->PhaseSampleClampMax = val;
+	OnAnyImportOptionsChanged();
 }

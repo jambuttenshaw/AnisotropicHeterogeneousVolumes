@@ -10,4 +10,6 @@ struct FMiePlotImportOptions
 	bool bClampPhaseSamples = false;
 	float PhaseSampleClampMin = 0.0f;
 	float PhaseSampleClampMax = 1.0f;
+
+	bool bReNormalize = false;
 };

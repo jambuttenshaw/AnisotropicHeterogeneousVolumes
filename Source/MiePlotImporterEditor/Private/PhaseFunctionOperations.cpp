@@ -1,4 +1,5 @@
-#include "MiePlotImporter.h"
+#include "PhaseFunctionOperations.h"
+#include "MiePlotImportOptions.h"
 
 
 static unsigned long long Factorial[] = {
@@ -30,7 +31,7 @@ static float EvalP(int l, int m, float x)
 	float pmm = 1.0f;
 	if (m > 0) {
 		float somx2 = sqrt((1.0f - x) * (1.0f + x));
-			float fact = 1.0f;
+		float fact = 1.0f;
 		for (int i = 1; i <= m; i++) {
 			pmm *= (-fact) * somx2;
 			fact += 2.0f;
@@ -66,7 +67,7 @@ static float SHBasis(int l, int m, float cosTheta, float phi)
 }
 
 
-static FVector4f SamplePhaseFunction(const TArray<FVector4f>& PhaseFunctionSamples, float CosTheta)
+FVector4f FPhaseFunctionOperations::SamplePhaseFunction(const TArray<FVector4f>& PhaseFunctionSamples, float CosTheta)
 {
 	const float Theta = FMath::Acos(CosTheta);
 	float uv = Theta / PI;
@@ -103,14 +104,14 @@ static T MCIntegration(const std::function<T(float)>& Func)
 }
 
 
-void FMiePlotImporterModule::GetMagnitude(const TArray<FVector4f>& PhaseFunctionSamples, FVector4f& OutMagnitude)
+void FPhaseFunctionOperations::GetMagnitude(const TArray<FVector4f>& PhaseFunctionSamples, FVector4f& OutMagnitude)
 {
 	std::function func = [&](float CosTheta) { return SamplePhaseFunction(PhaseFunctionSamples, CosTheta); };
 	OutMagnitude = MCIntegration(func);
 }
 
 
-void FMiePlotImporterModule::Normalize(TArray<FVector4f>& PhaseFunctionSamples)
+void FPhaseFunctionOperations::Normalize(TArray<FVector4f>& PhaseFunctionSamples)
 {
 	// Normalize phase function by numerically integrating over the surface of the sphere
 	FVector4f Magnitude;
@@ -124,7 +125,7 @@ void FMiePlotImporterModule::Normalize(TArray<FVector4f>& PhaseFunctionSamples)
 }
 
 
-void FMiePlotImporterModule::Clamp(TArray<FVector4f>& PhaseFunctionSamples, float Min, float Max)
+void FPhaseFunctionOperations::Clamp(TArray<FVector4f>& PhaseFunctionSamples, float Min, float Max)
 {
 	for (auto& PhaseSample : PhaseFunctionSamples)
 	{
@@ -135,7 +136,7 @@ void FMiePlotImporterModule::Clamp(TArray<FVector4f>& PhaseFunctionSamples, floa
 }
 
 
-void FMiePlotImporterModule::ExtractZonalHarmonics(const TArray<FVector4f>& PhaseFunctionSamples, FVector2f& OutZonalHarmonics)
+void FPhaseFunctionOperations::ExtractZonalHarmonics(const TArray<FVector4f>& PhaseFunctionSamples, FVector2f& OutZonalHarmonics)
 {
 	std::function func = [&](float CosTheta)
 		{
@@ -143,9 +144,23 @@ void FMiePlotImporterModule::ExtractZonalHarmonics(const TArray<FVector4f>& Phas
 			float PhaseSample = (PhaseSampleRGB.X + PhaseSampleRGB.Y + PhaseSampleRGB.Z) / 3.0f;
 
 			return FVector2f{
-				PhaseSample* SHBasis(0, 0, CosTheta, 0.0f),
-				PhaseSample* SHBasis(1, 0, CosTheta, 0.0f)
+				PhaseSample * SHBasis(0, 0, CosTheta, 0.0f),
+				PhaseSample * SHBasis(1, 0, CosTheta, 0.0f)
 			};
 		};
 	OutZonalHarmonics = MCIntegration(func);
+}
+
+
+void FPhaseFunctionOperations::ApplyImportOptions(TArray<FVector4f>& PhaseFunctionSamples, const FMiePlotImportOptions& ImportOptions)
+{
+	Normalize(PhaseFunctionSamples);
+	if (ImportOptions.bClampPhaseSamples)
+	{
+		Clamp(PhaseFunctionSamples, ImportOptions.PhaseSampleClampMin, ImportOptions.PhaseSampleClampMax);
+	}
+	if (ImportOptions.bReNormalize)
+	{
+		Normalize(PhaseFunctionSamples);
+	}
 }

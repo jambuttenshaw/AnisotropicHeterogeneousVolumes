@@ -6,6 +6,7 @@
 #include "Widgets/Input/SNumericEntryBox.h"
 
 
+class SPhaseFunctionWidget;
 struct FMiePlotImportOptions;
 
 
@@ -14,6 +15,7 @@ class SMiePlotImportWindow : public SCompoundWidget
 public:
 	SLATE_BEGIN_ARGS(SMiePlotImportWindow) {}
 		SLATE_ARGUMENT(FMiePlotImportOptions*, ImportOptions)
+		SLATE_ARGUMENT(TArray<FVector4f>*, pPhaseFunctionSamples)
 		SLATE_ARGUMENT(TSharedPtr<SWindow>, WidgetWindow)
 		SLATE_ARGUMENT(FText, FullPath)
 		SLATE_ARGUMENT(float, MaxWindowHeight)
@@ -36,7 +38,7 @@ private:
 	EActiveTimerReturnType SetFocusPostConstruct(double InCurrentTime, float InDeltaTime);
 	bool CanImport() const;
 
-	void UpdateImportOptions();
+	void OnCheckedStateChanged(ECheckBoxState State);
 
 	TOptional<float> GetClampSamplesMin() const;
 	void SetClampSamplesMin(float val, ETextCommit::Type);
@@ -44,19 +46,33 @@ private:
 	TOptional<float> GetClampSamplesMax() const;
 	void SetClampSamplesMax(float val, ETextCommit::Type);
 
+	void OnAnyImportOptionsChanged();
+
 private:
 	FMiePlotImportOptions* ImportOptions = nullptr;
+	TArray<FVector4f>* pPhaseFunctionSamples = nullptr;		// Pointer to the original, un-modified phase function samples
+	TArray<FVector4f> PhaseFunctionSamplesPreview;	// A preview of the phase function samples after they have gone through the import pipeline
+	FVector4f PhaseFunctionMagnitude;
 
 	TSharedPtr<SCheckBox> ConvertToMonochromeCheckBox;
 	TSharedPtr<SCheckBox> ClampSamplesCheckBox;
+	TSharedPtr<SCheckBox> ReNormalizeCheckBox;
 
 	TSharedPtr<SNumericEntryBox<float>> ClampSamplesMinEntryBox;
 	TSharedPtr<SNumericEntryBox<float>> ClampSamplesMaxEntryBox;
 
+	TSharedPtr<STextBlock> MagnitudeRLabel;
+	TSharedPtr<STextBlock> MagnitudeGLabel;
+	TSharedPtr<STextBlock> MagnitudeBLabel;
+
 	TSharedPtr<SCheckBox> ApplyToAllCheckBox;
 	TSharedPtr<SButton> ImportButton;
 
+	TSharedPtr<SPhaseFunctionWidget> PhaseFunctionWidget;
+
 	TWeakPtr<SWindow> WidgetWindow;
+
+	FNumberFormattingOptions NumberFormattingOptions;
 
 	bool bShouldImport = false;
 };

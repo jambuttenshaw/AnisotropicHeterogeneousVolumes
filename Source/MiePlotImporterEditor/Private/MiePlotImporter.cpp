@@ -17,6 +17,7 @@
 
 #include "MiePlotImportWindow.h"
 #include "DiscretePhaseFunction.h"
+#include "PhaseFunctionOperations.h"
 #include "HAL/PlatformApplicationMisc.h"
 #include "Interfaces/IMainFrameModule.h"
 
@@ -26,7 +27,7 @@ DEFINE_LOG_CATEGORY(LogMiePlotImporter);
 #define LOCTEXT_NAMESPACE "FMiePlotImporterModule"
 
 
-static bool ShowMiePlotImportWindow(const FString& Filename, bool& bApplyForAllAssets, FMiePlotImportOptions* ImportOptions)
+static bool ShowMiePlotImportWindow(const FString& Filename, bool& bApplyForAllAssets, FMiePlotImportOptions* ImportOptions, TArray<FVector4f>* PhaseFunctionSamples)
 {
 	TSharedPtr<SWindow> ParentWindow;
 
@@ -62,6 +63,7 @@ static bool ShowMiePlotImportWindow(const FString& Filename, bool& bApplyForAllA
 	Window->SetContent(
 		SAssignNew(MiePlotImportWindow, SMiePlotImportWindow)
 		.ImportOptions(ImportOptions)
+		.pPhaseFunctionSamples(PhaseFunctionSamples)
 		.WidgetWindow(Window)
 		.FullPath(FText::FromString(Filename))
 		.MaxWindowHeight(ImportWindowWidth)
@@ -153,14 +155,6 @@ void FMiePlotImporterModule::Import()
 
 	for (auto& Path : Paths)
 	{
-		if (!bApplyImportOptionsToAll)
-		{
-			if (!ShowMiePlotImportWindow(Path, bApplyImportOptionsToAll , &ImportOptions))
-			{
-				continue;
-			}
-		}
-
 		FString FileName = FPaths::GetBaseFilename(Path);
 
 		// The array of samples to put into the LUT
@@ -174,6 +168,16 @@ void FMiePlotImporterModule::Import()
 			continue;
 		}
 
+		if (!bApplyImportOptionsToAll)
+		{
+			if (!ShowMiePlotImportWindow(Path, bApplyImportOptionsToAll, &ImportOptions, &PhaseFunctionSamples))
+			{
+				if (bApplyImportOptionsToAll)
+					break;
+				continue;
+			}
+		}
+
 		// Create the asset to wrap all the phase function data
 		UDiscretePhaseFunction* PhaseFunction;
 		if (!CreatePhaseFunctionAsset(FileName, &PhaseFunction))
@@ -183,12 +187,8 @@ void FMiePlotImporterModule::Import()
 		}
 
 		// Process phase function data
-		Normalize(PhaseFunctionSamples);
-		if (ImportOptions.bClampPhaseSamples)
-		{
-			Clamp(PhaseFunctionSamples, ImportOptions.PhaseSampleClampMin, ImportOptions.PhaseSampleClampMax);
-		}
-		ExtractZonalHarmonics(PhaseFunctionSamples, PhaseFunction->ZonalHarmonics);
+		FPhaseFunctionOperations::ApplyImportOptions(PhaseFunctionSamples, ImportOptions);
+		FPhaseFunctionOperations::ExtractZonalHarmonics(PhaseFunctionSamples, PhaseFunction->ZonalHarmonics);
 
 		// Create the texture to hold the LUT
 		UTexture2D* Texture;
@@ -200,7 +200,7 @@ void FMiePlotImporterModule::Import()
 		PhaseFunction->LUT = Texture;
 
 		// Get the magnitude after all processing has been performed to determine how energy-conserving the final LUT is
-		GetMagnitude(PhaseFunctionSamples, PhaseFunction->Magnitude);
+		FPhaseFunctionOperations::GetMagnitude(PhaseFunctionSamples, PhaseFunction->Magnitude);
 
 		SaveAsset(Texture);
 		SaveAsset(PhaseFunction);
