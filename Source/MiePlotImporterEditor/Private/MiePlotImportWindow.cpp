@@ -194,8 +194,8 @@ void SMiePlotImportWindow::Construct(const FArguments& InArgs)
 				.AutoWidth()
 				.Padding(2)
 				[
-					SAssignNew(ClampSamplesCheckBox, SCheckBox)
-					.IsChecked(ImportOptions->bClampPhaseSamples)
+					SAssignNew(ClampCheckBox, SCheckBox)
+					.IsChecked(ImportOptions->bClamp)
 					.OnCheckStateChanged(this, &SMiePlotImportWindow::OnCheckedStateChanged)
 				]
 		]
@@ -212,7 +212,7 @@ void SMiePlotImportWindow::Construct(const FArguments& InArgs)
 				.Padding(2)
 				[
 					SNew(STextBlock)
-					.Text(LOCTEXT("ClampSamplesMinEntryBoxLabel", "Clamp Phase Samples Min"))
+					.Text(LOCTEXT("ClampSamplesMaxEntryBoxLabel", "Clamp Max"))
 				]
 				+ SHorizontalBox::Slot()
 				.VAlign(VAlign_Center)
@@ -220,35 +220,9 @@ void SMiePlotImportWindow::Construct(const FArguments& InArgs)
 				.AutoWidth()
 				.Padding(2)
 				[
-					SAssignNew(ClampSamplesMinEntryBox, SNumericEntryBox<float>)
-					.Value(this, &SMiePlotImportWindow::GetClampSamplesMin)
-					.OnValueCommitted(this, &SMiePlotImportWindow::SetClampSamplesMin)
-				]
-		]
-		+ SVerticalBox::Slot()
-		.AutoHeight()
-		.VAlign(VAlign_Top)
-		.Padding(2)
-		[
-			SNew(SHorizontalBox)
-				+ SHorizontalBox::Slot()
-				.VAlign(VAlign_Center)
-				.HAlign(HAlign_Left)
-				.FillWidth(1.0f)
-				.Padding(2)
-				[
-					SNew(STextBlock)
-					.Text(LOCTEXT("ClampSamplesMaxEntryBoxLabel", "Clamp Phase Samples Max"))
-				]
-				+ SHorizontalBox::Slot()
-				.VAlign(VAlign_Center)
-				.HAlign(HAlign_Right)
-				.AutoWidth()
-				.Padding(2)
-				[
-					SAssignNew(ClampSamplesMaxEntryBox, SNumericEntryBox<float>)
-					.Value(this, &SMiePlotImportWindow::GetClampSamplesMax)
-					.OnValueCommitted(this, &SMiePlotImportWindow::SetClampSamplesMax)
+					SAssignNew(ClampMaxEntryBox, SNumericEntryBox<float>)
+					.Value(this, &SMiePlotImportWindow::GetClampMax)
+					.OnValueCommitted(this, &SMiePlotImportWindow::SetClampMax)
 				]
 		]
 		+ SVerticalBox::Slot()
@@ -384,7 +358,7 @@ void SMiePlotImportWindow::OnCheckedStateChanged(ECheckBoxState State)
 void SMiePlotImportWindow::OnAnyImportOptionsChanged()
 {
 	ImportOptions->bConvertToMonochrome = ConvertToMonochromeCheckBox->IsChecked();
-	ImportOptions->bClampPhaseSamples = ClampSamplesCheckBox->IsChecked();
+	ImportOptions->bClamp = ClampCheckBox->IsChecked();
 	ImportOptions->bReNormalize = ReNormalizeCheckBox->IsChecked();
 
 	// Re-process samples
@@ -400,24 +374,13 @@ void SMiePlotImportWindow::OnAnyImportOptionsChanged()
 }
 
 
-TOptional<float> SMiePlotImportWindow::GetClampSamplesMin() const
+TOptional<float> SMiePlotImportWindow::GetClampMax() const
 {
-	return ImportOptions->PhaseSampleClampMin;
+	return ImportOptions->ClampMax;
 }
 
-TOptional<float> SMiePlotImportWindow::GetClampSamplesMax() const
+void SMiePlotImportWindow::SetClampMax(float val, ETextCommit::Type)
 {
-	return ImportOptions->PhaseSampleClampMax;
-}
-
-void SMiePlotImportWindow::SetClampSamplesMin(float val, ETextCommit::Type)
-{
-	ImportOptions->PhaseSampleClampMin = val;
-	OnAnyImportOptionsChanged();
-}
-
-void SMiePlotImportWindow::SetClampSamplesMax(float val, ETextCommit::Type)
-{
-	ImportOptions->PhaseSampleClampMax = val;
+	ImportOptions->ClampMax = val;
 	OnAnyImportOptionsChanged();
 }

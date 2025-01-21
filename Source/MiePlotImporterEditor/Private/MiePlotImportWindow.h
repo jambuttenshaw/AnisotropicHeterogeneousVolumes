@@ -40,11 +40,8 @@ private:
 
 	void OnCheckedStateChanged(ECheckBoxState State);
 
-	TOptional<float> GetClampSamplesMin() const;
-	void SetClampSamplesMin(float val, ETextCommit::Type);
-
-	TOptional<float> GetClampSamplesMax() const;
-	void SetClampSamplesMax(float val, ETextCommit::Type);
+	TOptional<float> GetClampMax() const;
+	void SetClampMax(float val, ETextCommit::Type);
 
 	void OnAnyImportOptionsChanged();
 
@@ -55,11 +52,10 @@ private:
 	FVector4f PhaseFunctionMagnitude;
 
 	TSharedPtr<SCheckBox> ConvertToMonochromeCheckBox;
-	TSharedPtr<SCheckBox> ClampSamplesCheckBox;
+	TSharedPtr<SCheckBox> ClampCheckBox;
 	TSharedPtr<SCheckBox> ReNormalizeCheckBox;
 
-	TSharedPtr<SNumericEntryBox<float>> ClampSamplesMinEntryBox;
-	TSharedPtr<SNumericEntryBox<float>> ClampSamplesMaxEntryBox;
+	TSharedPtr<SNumericEntryBox<float>> ClampMaxEntryBox;
 
 	TSharedPtr<STextBlock> MagnitudeRLabel;
 	TSharedPtr<STextBlock> MagnitudeGLabel;

@@ -125,13 +125,13 @@ void FPhaseFunctionOperations::Normalize(TArray<FVector4f>& PhaseFunctionSamples
 }
 
 
-void FPhaseFunctionOperations::Clamp(TArray<FVector4f>& PhaseFunctionSamples, float Min, float Max)
+void FPhaseFunctionOperations::Clamp(TArray<FVector4f>& PhaseFunctionSamples, float Max)
 {
 	for (auto& PhaseSample : PhaseFunctionSamples)
 	{
-		PhaseSample.X = FMath::Clamp(PhaseSample.X, Min, Max);
-		PhaseSample.Y = FMath::Clamp(PhaseSample.Y, Min, Max);
-		PhaseSample.Z = FMath::Clamp(PhaseSample.Z, Min, Max);
+		PhaseSample.X = FMath::Min(PhaseSample.X, Max);
+		PhaseSample.Y = FMath::Min(PhaseSample.Y, Max);
+		PhaseSample.Z = FMath::Min(PhaseSample.Z, Max);
 	}
 }
 
@@ -172,10 +172,12 @@ void FPhaseFunctionOperations::ApplyImportOptions(TArray<FVector4f>& PhaseFuncti
 	{
 		ConvertToMonochrome(PhaseFunctionSamples);
 	}
-	if (ImportOptions.bClampPhaseSamples)
+
+	if (ImportOptions.bClamp)
 	{
-		Clamp(PhaseFunctionSamples, ImportOptions.PhaseSampleClampMin, ImportOptions.PhaseSampleClampMax);
+		Clamp(PhaseFunctionSamples, ImportOptions.ClampMax);
 	}
+
 	if (ImportOptions.bReNormalize)
 	{
 		Normalize(PhaseFunctionSamples);
