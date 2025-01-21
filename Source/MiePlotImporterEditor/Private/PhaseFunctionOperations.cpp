@@ -136,6 +136,19 @@ void FPhaseFunctionOperations::Clamp(TArray<FVector4f>& PhaseFunctionSamples, fl
 }
 
 
+void FPhaseFunctionOperations::ConvertToMonochrome(TArray<FVector4f>& PhaseFunctionSamples)
+{
+	for (auto& PhaseSample : PhaseFunctionSamples)
+	{
+		float Average = (PhaseSample.X + PhaseSample.Y + PhaseSample.Z) / 3.0f;
+		PhaseSample.X = Average;
+		PhaseSample.Y = Average;
+		PhaseSample.Z = Average;
+	}
+}
+
+
+
 void FPhaseFunctionOperations::ExtractZonalHarmonics(const TArray<FVector4f>& PhaseFunctionSamples, FVector2f& OutZonalHarmonics)
 {
 	std::function func = [&](float CosTheta)
@@ -155,6 +168,10 @@ void FPhaseFunctionOperations::ExtractZonalHarmonics(const TArray<FVector4f>& Ph
 void FPhaseFunctionOperations::ApplyImportOptions(TArray<FVector4f>& PhaseFunctionSamples, const FMiePlotImportOptions& ImportOptions)
 {
 	Normalize(PhaseFunctionSamples);
+	if (ImportOptions.bConvertToMonochrome)
+	{
+		ConvertToMonochrome(PhaseFunctionSamples);
+	}
 	if (ImportOptions.bClampPhaseSamples)
 	{
 		Clamp(PhaseFunctionSamples, ImportOptions.PhaseSampleClampMin, ImportOptions.PhaseSampleClampMax);

@@ -160,7 +160,7 @@ void FMiePlotImporterModule::Import()
 		// The array of samples to put into the LUT
 		TArray<FVector4f> PhaseFunctionSamples;
 
-		if (!ParseMiePlotData(Path, ImportOptions, PhaseFunctionSamples))
+		if (!ParseMiePlotData(Path, PhaseFunctionSamples))
 		{
 			// Error
 			// Log error and continue to next file

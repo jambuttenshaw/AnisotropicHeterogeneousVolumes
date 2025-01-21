@@ -47,7 +47,7 @@ private:
 
 	static void* GetWindowHandle();
 
-	static bool ParseMiePlotData(const FString& Path, const FMiePlotImportOptions& ImportOptions, TArray<FVector4f>& OutPhaseFunctionSamples);
+	static bool ParseMiePlotData(const FString& Path, TArray<FVector4f>& OutPhaseFunctionSamples);
 
 private:
 	TSharedPtr<class FUICommandList> PluginCommands;

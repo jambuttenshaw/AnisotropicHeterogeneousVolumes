@@ -19,54 +19,101 @@ int32 SPhaseFunctionWidget::OnPaint(const FPaintArgs& Args, const FGeometry& All
     if (pPhaseFunctionSamples == nullptr)
         return LayerId;
 
-    constexpr int32 NumPoints = 1000;
-    TArray<FVector2D> Points;
-    Points.Reserve(NumPoints);
-
     const FTransform2D PointsTransform = GetPointsTransform(AllottedGeometry);
+    TArray<FVector2D> Points;
 
-    TArray<FLinearColor> Channels;
-    if (ImportOptions->bConvertToMonochrome)
-    {
-        Channels.Add(FLinearColor::White);
-    }
-    else
-    {
-        Channels.Add(FLinearColor::Red);
-        Channels.Add(FLinearColor::Green);
-        Channels.Add(FLinearColor::Blue);
-    }
+    constexpr FLinearColor DarkGrey{ 0.08f, 0.08f, 0.08f };
 
-    for (int32 channel = 0; channel < Channels.Num(); channel++)
+    // Create circles to show that it is a polar plot
     {
-        for (int32 i = 0; i < NumPoints; i++)
+        constexpr int32 NumPoints = 180;
+        Points.Reserve(NumPoints);
+
+        constexpr int32 NumRings = 4;
+        for (int32 ring = 0; ring < NumRings; ring++)
         {
-            float Theta = static_cast<float>(i) / static_cast<float>(NumPoints - 1) * TWO_PI;
-            float CosTheta = FMath::Cos(Theta);
+            float r = 0.5f * static_cast<float>(ring + 1) / static_cast<float>(NumRings);
 
-            // Sample phase function at CosTheta
-            FVector4f Sample = FPhaseFunctionOperations::SamplePhaseFunction(*pPhaseFunctionSamples, CosTheta);
+	        for (int i = 0; i < NumPoints; i++)
+	        {
+                float Theta = static_cast<float>(i) / static_cast<float>(NumPoints - 1) * TWO_PI;
 
+                FVector2D Offset{ 0.5f, 0.5f };
+                Points.Add(PointsTransform.TransformPoint(Offset + FVector2D(r * FMath::Cos(Theta), r * FMath::Sin(Theta))));
+	        }
 
-            // Normalize sample to fit in plot.
-            // Plot with logarithmic scale
-            float r = (FMath::LogX(10.0f, Sample[channel]) - LogMinSample[channel]) / (LogMaxSample[channel] - LogMinSample[channel]);
+            FSlateDrawElement::MakeLines(OutDrawElements, LayerId, AllottedGeometry.ToPaintGeometry(), Points, ESlateDrawEffect::None, DarkGrey);
+            Points.Empty();
+        }
+    }
 
-            // Scale r to fit within range [0,0.5]
-            r *= 0.5f;
+    // Create radial lines at equal intervals
+    {
+        constexpr int32 NumRadialLines = 12;
+        // 2 points per line
+        Points.Reserve(2 * NumRadialLines);
 
-            // Convert from polar to cartesian
-            float X = r * CosTheta;
-            float Y = r * FMath::Sin(Theta);
+        for (int32 i = 0; i < NumRadialLines; i++)
+        {
+            float Theta = static_cast<float>(i) / static_cast<float>(NumRadialLines) * TWO_PI;
 
-            // To position points in the centre of the widget
             FVector2D Offset{ 0.5f, 0.5f };
 
-            Points.Add(PointsTransform.TransformPoint(FVector2D(X, Y) + Offset));
+            Points.Add(PointsTransform.TransformPoint(Offset));
+            Points.Add(PointsTransform.TransformPoint(Offset + FVector2D(0.5f * FMath::Cos(Theta), 0.5f * FMath::Sin(Theta))));
         }
 
-		FSlateDrawElement::MakeLines(OutDrawElements, LayerId, AllottedGeometry.ToPaintGeometry(), Points, ESlateDrawEffect::None, Channels[channel]);
+        FSlateDrawElement::MakeLines(OutDrawElements, LayerId, AllottedGeometry.ToPaintGeometry(), Points, ESlateDrawEffect::None, DarkGrey);
         Points.Empty();
+    }
+
+    {
+        constexpr int32 NumPoints = 1000;
+        Points.Reserve(NumPoints);
+
+        TArray<FLinearColor> Channels;
+        if (ImportOptions->bConvertToMonochrome)
+        {
+            Channels.Add(FLinearColor::White);
+        }
+        else
+        {
+            Channels.Add(FLinearColor::Red);
+            Channels.Add(FLinearColor::Green);
+            Channels.Add(FLinearColor::Blue);
+        }
+
+        for (int32 channel = 0; channel < Channels.Num(); channel++)
+        {
+            for (int32 i = 0; i < NumPoints; i++)
+            {
+                float Theta = static_cast<float>(i) / static_cast<float>(NumPoints - 1) * TWO_PI;
+                float CosTheta = FMath::Cos(Theta);
+
+                // Sample phase function at CosTheta
+                FVector4f Sample = FPhaseFunctionOperations::SamplePhaseFunction(*pPhaseFunctionSamples, CosTheta);
+
+
+                // Normalize sample to fit in plot.
+                // Plot with logarithmic scale
+                float r = (FMath::LogX(10.0f, Sample[channel]) - LogMinSample[channel]) / (LogMaxSample[channel] - LogMinSample[channel]);
+
+                // Scale r to fit within range [0,0.5]
+                r *= 0.5f;
+
+                // Convert from polar to cartesian
+                float X = r * CosTheta;
+                float Y = r * FMath::Sin(Theta);
+
+                // To position points in the centre of the widget
+                FVector2D Offset{ 0.5f, 0.5f };
+
+                Points.Add(PointsTransform.TransformPoint(FVector2D(X, Y) + Offset));
+            }
+
+            FSlateDrawElement::MakeLines(OutDrawElements, LayerId, AllottedGeometry.ToPaintGeometry(), Points, ESlateDrawEffect::None, Channels[channel]);
+            Points.Empty();
+        }
     }
 
     return LayerId;
