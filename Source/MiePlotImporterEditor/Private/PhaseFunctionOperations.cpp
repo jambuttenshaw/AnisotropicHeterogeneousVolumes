@@ -183,3 +183,37 @@ void FPhaseFunctionOperations::ApplyImportOptions(TArray<FVector4f>& PhaseFuncti
 		Normalize(PhaseFunctionSamples);
 	}
 }
+
+
+
+void FPhaseFunctionOperations::GenerateNextMip(const TArray<FVector4f>& InPhaseFunctionSamples, TArray<FVector4f>& OutPhaseFunctionSamples, int32 KernelWidthInTexels)
+{
+	// Calculate new mip size
+	int32 NewWidth = FMath::Max(InPhaseFunctionSamples.Num() / 2, 1);
+
+	OutPhaseFunctionSamples.Empty();
+	OutPhaseFunctionSamples.SetNum(NewWidth);
+
+	// Average incoming samples to produce a new set of samples
+	// Averaging the phase function will make it increasingly isotropic
+	for (int32 i = 0; i < NewWidth; i++)
+	{
+		int32 SampleCount = 0;
+		FVector4f Sum = FVector4f(0.0f, 0.0f, 0.0f);
+
+		int32 CentreSample = 2 * i;
+		for (int32 Sample = CentreSample - (KernelWidthInTexels / 2); Sample <= CentreSample + (KernelWidthInTexels / 2); Sample++)
+		{
+			if (Sample >= 0 && Sample < InPhaseFunctionSamples.Num())
+			{
+				SampleCount++;
+				Sum += InPhaseFunctionSamples[Sample];
+			}
+		}
+
+		OutPhaseFunctionSamples[i] = Sum / static_cast<float>(SampleCount);
+	}
+
+	// Normalize the new phase function to keep it energy-conserving
+	Normalize(OutPhaseFunctionSamples);
+}

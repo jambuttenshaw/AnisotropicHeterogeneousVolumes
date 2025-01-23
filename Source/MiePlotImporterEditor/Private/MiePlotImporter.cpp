@@ -231,32 +231,31 @@ bool FMiePlotImporterModule::CreatePhaseFunctionLUT(const FString& FileName, con
 	UTexture2D* Texture = NewObject<UTexture2D>(Package, UTexture2D::StaticClass(), FName(*AssetName), EObjectFlags::RF_Public | EObjectFlags::RF_Standalone);
 	Texture->AddToRoot();
 
-	// Texture Settings
-	FTexturePlatformData* PlatformData = new FTexturePlatformData;
-	PlatformData->SizeX = Width;
-	PlatformData->SizeY = Height;
-	PlatformData->PixelFormat = PixelFormat;
+	// Create mipmaps
+	uint32 MipCount = FMath::Log2(static_cast<float>(Width)) + 1;
 
-	// Passing the pixels information to the texture
-	FTexture2DMipMap* Mip = new FTexture2DMipMap;
-	Mip->SizeX = Width;
-	Mip->SizeY = Height;
-	Mip->BulkData.Lock(LOCK_READ_WRITE);
+	TArray<FVector4f> TextureData;
+	TextureData.Insert(PhaseFunctionSamples, 0);
 
-	// 4 floats per element
-	const int64 DataSize = Width * Height * sizeof(float) * 4;
-	float* TextureData = reinterpret_cast<float*>(Mip->BulkData.Realloc(DataSize));
-	FMemory::Memcpy(TextureData, PhaseFunctionSamples.GetData(), DataSize);
+	TArray<FVector4f> CurrentMip;
+	TArray<FVector4f> NextMip;
+	CurrentMip.Insert(PhaseFunctionSamples, 0);
 
-	Mip->BulkData.Unlock();
-	PlatformData->Mips.Add(Mip);
-	Texture->SetPlatformData(PlatformData);
+	for (uint32 Mip = 1; Mip < MipCount; Mip++)
+	{
+		FPhaseFunctionOperations::GenerateNextMip(CurrentMip, NextMip, 9);
+
+		TextureData.Insert(NextMip, TextureData.Num());
+
+		CurrentMip = std::move(NextMip);
+	}
 
 	Texture->SRGB = 0;
 	Texture->CompressionSettings = TC_HDR;
 	Texture->AddressX = TA_Clamp;
 	Texture->AddressY = TA_Clamp;
-	Texture->Source.Init(Width, Height, 1, 1, SourceFormat, reinterpret_cast<const uint8*>(TextureData));
+	Texture->MipGenSettings = TMGS_LeaveExistingMips;
+	Texture->Source.Init(Width, Height, 1, MipCount, SourceFormat, reinterpret_cast<const uint8*>(TextureData.GetData()));
 
 	// Updating Texture & mark it as unsaved
 	Texture->UpdateResource();

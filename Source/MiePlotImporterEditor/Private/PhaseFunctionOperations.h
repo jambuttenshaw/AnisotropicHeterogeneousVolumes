@@ -22,5 +22,9 @@ public:
 
 	static void ApplyImportOptions(TArray<FVector4f>& PhaseFunctionSamples, const FMiePlotImportOptions& ImportOptions);
 
+	// For creating mip chains of LUTs where each subsequent mip is more isotropic
+	// This is preferable to creating a 2D LUT because it uses substantially less data
+	static void GenerateNextMip(const TArray<FVector4f>& InPhaseFunctionSamples, TArray<FVector4f>& OutPhaseFunctionSamples, int32 KernelWidthInTexels);
+
 };
 
